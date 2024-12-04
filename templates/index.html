@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot UPTex</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #e9edf0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #chat-container {
+            width: 100%;
+            max-width: 400px;
+            height: 600px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        #chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #f9f9f9;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+        .message {
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .message.user {
+            align-self: flex-end;
+            background: #007bff;
+            color: white;
+            border-bottom-right-radius: 0;
+        }
+        .message.bot {
+            align-self: flex-start;
+            background: #f1f0f0;
+            color: #333;
+            border-bottom-left-radius: 0;
+        }
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        .suggestion-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        #input-container {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+        }
+        #user-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+        }
+        #send-btn {
+            margin-left: 10px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        #send-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-messages"></div>
+        <div id="input-container">
+            <input type="text" id="user-input" placeholder="Escribe tu mensaje aquí...">
+            <button id="send-btn">➤</button>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // Agregar mensaje al chat
+        const addMessage = (sender, message, suggestions = []) => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', sender === 'user' ? 'user' : 'bot');
+            messageElement.textContent = message;
+
+            chatMessages.appendChild(messageElement);
+
+            // Si hay sugerencias, mostrarlas
+            if (suggestions.length > 0) {
+                const suggestionsContainer = document.createElement('div');
+                suggestionsContainer.classList.add('suggestions');
+                suggestions.forEach(suggestion => {
+                    const button = document.createElement('button');
+                    button.classList.add('suggestion-btn');
+                    button.textContent = suggestion;
+                    button.onclick = () => {
+                        userInput.value = suggestion;
+                        sendMessage();
+                    };
+                    suggestionsContainer.appendChild(button);
+                });
+                chatMessages.appendChild(suggestionsContainer);
+            }
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        };
+
+        // Mensaje de bienvenida
+        addMessage('bot', "¡Hola! Bienvenido al chatbot de la UPTex. Haz clic en una de las siguientes opciones o escribe tu mensaje:", [
+            "¿Cuáles son los requisitos de admisión?",
+            "¿Qué carreras ofrece la UPTex?",
+            "¿Cuál es el horario de atención?",
+            "¿Cómo puedo contactar a la UPTex?"
+        ]);
+
+        // Enviar mensaje
+        const sendMessage = () => {
+            const userMessage = userInput.value.trim();
+            if (!userMessage) return;
+
+            addMessage('user', userMessage);
+            userInput.value = '';
+
+            fetch('/get_response', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: userMessage })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.response) {
+                    addMessage('bot', data.response, data.suggestions || []);
+                } else {
+                    addMessage('bot', "No estoy seguro de lo que preguntas. Intenta con alguna de estas opciones:", data.suggestions || []);
+                }
+            });
+        };
+
+        sendBtn.onclick = sendMessage;
+        userInput.onkeypress = (e) => {
+            if (e.key === 'Enter') sendMessage();
+        };
+    </script>
+</body>
+</html>
