@@ -1,112 +1,88 @@
+import random
 from fuzzywuzzy import process
+from unidecode import unidecode  # Para manejar los acentos
 
 # Grupos de preguntas relacionadas
 question_groups = {
     "horarios": [
-        "¿Cuál es el horario de atención?",
-        "¿Cuál es el horario de clases?",
-        "¿Qué horario tiene la biblioteca?"
+        "¿Cual es el horario de atencion?",
+        "¿Cuales son los contactos de atencion?",
+        "¿Que turnos ofrece la UPTex?"
     ],
-    "admisión": [
-        "¿Cuáles son los requisitos de admisión?",
-        "¿Cuándo abren las convocatorias?",
-        "¿Cómo puedo registrarme para el examen de admisión?"
+    "admision": [
+        "¿Como puedo ingresar a una carrera en la UPTex?",
+        "¿Cual es el promedio minimo para ingresar a la UPTex?",
+        "¿Cuales son las fechas de inscripcion y admision?"
     ],
     "carreras": [
-        "¿Qué carreras ofrece la UPTex?",
-        "¿Qué duración tienen las carreras?",
-        "¿Qué programas tienen enfoque en tecnología?"
+        "¿Que carreras ofrece la UPTex?",
+        "¿Que duracion tienen las carreras?",
+        "¿Cual es el plan de estudios de cada carrera?"
+    ],
+    "tramites": [
+        "¿La UPTex cuenta con programas de posgrado o maestria?",
+        "¿Como realizo el tramite de titulacion?",
+        "¿Que becas o apoyos financieros ofrece para los estudiantes?"
+    ],
+    "instalaciones": [
+        "¿Donde se encuentra ubicada la UPTex?",
+        "¿Que servicios ofrece la UPTex en sus instalaciones?",
+        "¿Hay areas deportivas en la UPTex?"
+    ],
+    "becas": [
+        "¿Que tipos de becas ofrece la UPTex?",
+        "¿Cuales son los requisitos para obtener una beca?",
+        "¿Como puedo solicitar una beca en la UPTex?"
     ]
 }
 
 # Base de datos de respuestas
-educational_offers = { 
-    # Horarios
-    "¿Cuál es el horario de atención?": "El horario de atención en la UPTex es de lunes a viernes, de 8:00 am a 6:00 pm.",
-    "horario de atención": "El horario de atención en la UPTex es de lunes a viernes, de 8:00 am a 6:00 pm.",
-    "¿Cuál es el horario de clases?": "El horario de clases varía según la carrera, pero generalmente es de 7:00 am a 3:00 pm.",
-    "horario de clases": "El horario de clases varía según la carrera, pero generalmente es de 7:00 am a 3:00 pm.",
-    "¿Qué horario tiene la biblioteca?": "La biblioteca está abierta de lunes a viernes, de 8:00 am a 8:00 pm, y los sábados de 9:00 am a 2:00 pm.",
-    "horario de la biblioteca": "La biblioteca está abierta de lunes a viernes, de 8:00 am a 8:00 pm, y los sábados de 9:00 am a 2:00 pm.",
-
-    # Contacto
-    "¿Cuál es el correo electrónico de contacto?": "Puedes contactar a la UPTex al correo: rectoria.uptex@uptex.edu.mx.",
-    "correo": "Puedes contactar a la UPTex al correo: rectoria.uptex@uptex.edu.mx.",
-    "contacto para mandar un correo": "Puedes contactar a la UPTex al correo: rectoria.uptex@uptex.edu.mx.",
-    "¿Cómo puedo contactar a la UPTex?": "Puedes contactar a la UPTex al teléfono 5588440102 o al correo: rectoria.uptex@uptex.edu.mx.",
-    "teléfono de contacto": "El teléfono de contacto de la UPTex es 5588440102.",
-
-    # Carreras
-    "¿Qué carreras ofrece la UPTex?": "La UPTex ofrece las siguientes carreras: Ingeniería en Mecatrónica, Ingeniería en Sistemas Electrónicos, Ingeniería en Tecnologías de la Información y Comunicación, Ingeniería en Logística, Licenciatura en Comercio Internacional y Aduanas, y Licenciatura en Administración.",
-    "carreras disponibles": "La UPTex ofrece las siguientes carreras: Ingeniería en Mecatrónica, Ingeniería en Sistemas Electrónicos, Ingeniería en Tecnologías de la Información y Comunicación, Ingeniería en Logística, Licenciatura en Comercio Internacional y Aduanas, y Licenciatura en Administración.",
-    "dime las carreras": "La UPTex ofrece las siguientes carreras: Ingeniería en Mecatrónica, Ingeniería en Sistemas Electrónicos, Ingeniería en Tecnologías de la Información y Comunicación, Ingeniería en Logística, Licenciatura en Comercio Internacional y Aduanas, y Licenciatura en Administración.",
-    "¿Qué es Ingeniería en Mecatrónica?": "La Ingeniería en Mecatrónica combina la mecánica, electrónica y sistemas de control para diseñar y mejorar procesos automatizados.",
-    "¿Qué es Ingeniería en Sistemas Electrónicos?": "La Ingeniería en Sistemas Electrónicos se enfoca en la creación y mantenimiento de circuitos y dispositivos electrónicos.",
-    "¿Qué es Ingeniería en Tecnologías de la Información?": "Esta carrera prepara a los estudiantes en desarrollo de software, redes de comunicación y ciberseguridad.",
-    "¿Qué es Ingeniería en Logística?": "La Ingeniería en Logística enseña a gestionar cadenas de suministro, transporte y almacenamiento de manera eficiente.",
-    "¿Qué es la Licenciatura en Comercio Internacional?": "Esta carrera forma especialistas en comercio exterior, aduanas y logística internacional.",
-    "¿Qué es la Licenciatura en Administración?": "Prepara a los estudiantes para liderar organizaciones y manejar recursos de manera eficiente.",
-
-    # Admisión
-    "¿Cuáles son los requisitos de admisión?": "Los requisitos de admisión incluyen certificado de preparatoria, acta de nacimiento, CURP y comprobante de domicilio.",
-    "requisitos de admisión": "Los requisitos de admisión incluyen certificado de preparatoria, acta de nacimiento, CURP y comprobante de domicilio.",
-    "¿Cuál es el promedio mínimo para ingresar?": "El promedio mínimo para ingresar a la UPTex es de 7.0.",
-    "promedio mínimo": "El promedio mínimo para ingresar a la UPTex es de 7.0.",
-    "¿Cuándo abren las convocatorias?": "Las convocatorias de admisión se publican cada año en mayo.",
-    "convocatorias de admisión": "Las convocatorias de admisión se publican cada año en mayo.",
-    "¿Cómo me registro para el examen de admisión?": "Puedes registrarte para el examen de admisión a través del sitio oficial de la UPTex siguiendo los pasos de la convocatoria.",
-    "registro para examen de admisión": "Debes registrarte en línea y completar los pasos indicados en la convocatoria.",
-
-    # Becas
-    "¿La UPTex ofrece becas?": "Sí, la UPTex ofrece becas académicas, deportivas y de apoyo económico.",
-    "becas disponibles": "La UPTex ofrece becas académicas, deportivas y de apoyo económico.",
-    "¿Cómo puedo solicitar una beca?": "Puedes solicitar una beca a través de las convocatorias publicadas en el sitio oficial de la UPTex.",
-    "solicitar beca": "Consulta las bases en la sección de convocatorias de la UPTex.",
-
-    # Instalaciones
-    "¿Qué instalaciones tiene la UPTex?": "La UPTex cuenta con laboratorios de cómputo, talleres, biblioteca, áreas deportivas y cafeterías.",
-    "instalaciones de la UPTex": "La UPTex cuenta con laboratorios de cómputo, talleres, biblioteca, áreas deportivas y cafeterías.",
-    "¿Tiene la UPTex biblioteca?": "Sí, la UPTex tiene una biblioteca bien equipada con recursos físicos y digitales.",
-    "biblioteca de la UPTex": "La biblioteca está disponible de lunes a viernes, de 8:00 am a 8:00 pm.",
-
-    # Actividades extracurriculares
-    "¿Qué actividades extracurriculares tiene la UPTex?": "La UPTex ofrece deportes, grupos culturales y talleres de desarrollo personal.",
-    "actividades extracurriculares": "Puedes participar en deportes, grupos culturales y talleres en la UPTex.",
-    "¿Qué deportes ofrece la UPTex?": "La UPTex tiene equipos de fútbol, voleibol, baloncesto y más.",
-    "deportes en la UPTex": "Puedes practicar fútbol, voleibol, baloncesto y atletismo en la UPTex."
-}
-
-related_questions = {
-    "horarios": ["¿Cuál es el horario de clases?", "¿Qué horario tiene la biblioteca?", "¿Cuál es el horario de atención?"],
-    "carreras": ["¿Qué carreras ofrece la UPTex?", "¿Qué es Ingeniería en Mecatrónica?", "¿Qué es Ingeniería en Sistemas Electrónicos?"],
-    "contacto": ["¿Cuál es el correo electrónico de contacto?", "¿Cómo puedo contactar a la UPTex?", "¿Cuál es el número telefónico de la UPTex?"]
+educational_offers = {
+    "¿Cual es el horario de atencion?": "El horario de atencion en la UPTex es de lunes a viernes, de 8:00 am a 6:00 pm.",
+    "¿Cuales son los contactos de atencion?": "Direccion Academica: (01) 595 95 4 23 61, Servicios Escolares: (01) 595 92 1 30 27, rectoria.uptex@uptex.edu.mx.",
+    "¿Que turnos ofrece la UPTex?": "Turno matutino: 7:00 am a 3:00 pm, Turno vespertino: 12:00 pm a 8:00 pm.",
+    "¿Como puedo ingresar a una carrera en la UPTex?": "Debes realizar un examen de admision y alcanzar el puntaje requerido para cada carrera o, si obtuviste un promedio general de 8.0 en tu bachillerato, puedes presentar tu solicitud de pase directo.",
+    "¿Cual es el promedio minimo para ingresar a la UPTex?": "El promedio minimo para ingresar es de 7.0 general.",
+    "¿Cuales son las fechas de inscripcion y admision?": "La convocatoria para nuevo ingreso se lleva a cabo cada año en el mes de mayo. Si fuiste seleccionado, puedes iniciar tu proceso de inscripcion en septiembre.",
+    "¿Que carreras ofrece la UPTex?": "Ingenieria en Sistemas Electronicos, Ingenieria en Mecatronica, Ingenieria en Tecnologias de la Informacion e Innovacion Digital, Ingenieria en Logistica y Transporte, Licenciatura en Administracion y Gestion de Empresas, Licenciatura en Comercio Internacional y Aduanas.",
+    "¿Que duracion tienen las carreras?": "Todas las carreras son de 3 años y 4 meses, organizados en cuatrimestres.",
+    "¿Cual es el plan de estudios de cada carrera?": "El plan de estudios varía según la carrera y puede consultarse en el sitio oficial de la UPTex.",
+    "¿La UPTex cuenta con programas de posgrado o maestria?": "Por ahora, en la UPTex puedes obtener tu maestria en Comercio Logistica Internacional.",
+    "¿Como realizo el tramite de titulacion?": "El tramite de titulacion se realiza a traves del portal en linea.",
+    "¿Que becas o apoyos financieros ofrece para los estudiantes?": "Madres que se encuentran estudiando, discapacidad, estudiantes indigenas, descuentos de pago.",
+    "¿Donde se encuentra ubicada la UPTex?": "La UPTex esta ubicada en Texcoco, Estado de Mexico.",
+    "¿Que servicios ofrece la UPTex en sus instalaciones?": "La UPTex cuenta con bibliotecas, cafeterias, laboratorios, y areas de estudio grupales.",
+    "¿Hay areas deportivas en la UPTex?": "Si, la UPTex dispone de areas deportivas para los estudiantes.",
+    "¿Que tipos de becas ofrece la UPTex?": "La UPTex ofrece becas para madres estudiantes, estudiantes con discapacidad, y estudiantes indigenas.",
+    "¿Cuales son los requisitos para obtener una beca?": "Los requisitos incluyen estar inscrito en la UPTex, mantener un promedio minimo de 8.0 y cumplir con la documentacion solicitada.",
+    "¿Como puedo solicitar una beca en la UPTex?": "Puedes solicitar una beca directamente en el area de servicios escolares, presentando tu documentacion completa."
 }
 
 def chatbot_response(user_input):
-    # Encuentra respuesta y sugerencias relacionadas
-    response, category = get_response_and_category(user_input)  # Función que devuelve la respuesta y categoría
-    suggestions = related_questions.get(category, [])
-    return {"response": response, "suggestions": suggestions}
+    # Transformar el texto del usuario a minúsculas y eliminar acentos
+    normalized_input = unidecode(user_input.lower())
 
-# Función para buscar preguntas relacionadas
-def suggest_questions(query):
-    suggestions = []
-    for group, questions in question_groups.items():
-        for q in questions:
-            if process.extractOne(query, questions)[1] > 60:
-                suggestions.extend(questions)
-    return list(set(suggestions))  # Elimina duplicados
+    # Verificar si el usuario seleccionó una categoría
+    if normalized_input in question_groups:
+        # Seleccionar preguntas al azar de la categoría
+        questions = question_groups[normalized_input]
+        selected_questions = random.sample(questions, min(8, len(questions)))
+        return {
+            "response": f"Aqui tienes algunas preguntas relacionadas con {user_input}:",
+            "suggestions": selected_questions
+        }
 
-# Función principal del chatbot
-def chatbot_response(user_input):
-    # Buscar la mejor coincidencia
-    best_match = process.extractOne(user_input, educational_offers.keys())
+    # Buscar la mejor coincidencia entre las preguntas
+    normalized_questions = {unidecode(k): k for k in educational_offers.keys()}
+    best_match = process.extractOne(normalized_input, normalized_questions.keys())
     if best_match and best_match[1] > 80:
-        return educational_offers[best_match[0]]
+        matched_question = normalized_questions[best_match[0]]
+        return {"response": educational_offers[matched_question], "suggestions": []}
     else:
-        # Ofrecer sugerencias si la pregunta no es clara
-        suggestions = suggest_questions(user_input)
-        if suggestions:
-            return f"No estoy seguro de lo que preguntas. Quizás te refieres a: {', '.join(suggestions)}"
-        else:
-            return "Lo siento, no entiendo tu pregunta. Por favor, intenta ser más específico."
+        # Si no se encuentra una coincidencia clara
+        return {
+            "response": (
+                "Lo siento, no entiendo tu pregunta. Por favor intenta ser mas especifico o selecciona una categoria:"
+            ),
+            "suggestions": list(question_groups.keys())
+        }

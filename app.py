@@ -1,38 +1,33 @@
 from flask import Flask, request, jsonify, render_template
-from chatbot_logic import chatbot_response
+from chatbot_logic import chatbot_response, question_groups
 
 app = Flask(__name__)
 
-# Mensaje de bienvenida predeterminado
+# Mensajes principales
 WELCOME_MESSAGE = (
-    "¡Hola! Bienvenido al chatbot de la UPTex. Puedes hacerme preguntas como:\n"
-    "- ¿Qué carreras ofrece la UPTex?\n"
-    "- ¿Cuáles son los requisitos de admisión?\n"
-    "- ¿Cuál es el horario de atención?\n"
-    "- ¿Cuándo abren las convocatorias?\n"
-    "¡Estoy aquí para ayudarte!"
+    "¡Hola! Bienvenido al chatbot oficial de la UPTex. Estoy aquí para responder tus preguntas sobre nuestra oferta educativa. "
+    "Selecciona una categoría o escribe tu pregunta."
 )
 
 @app.route('/')
 def home():
-    # Renderiza la página principal y pasa el mensaje de bienvenida al frontend
-    return render_template('index.html', welcome_message=WELCOME_MESSAGE)
+    return render_template(
+        'index.html',
+        welcome_message=WELCOME_MESSAGE,
+        categories=list(question_groups.keys())
+    )
 
 @app.route('/get_response', methods=['POST'])
 def get_response():
     try:
-        # Recibe la consulta del usuario desde el frontend
         user_input = request.json.get("message")
         if user_input:
-            # Procesa la respuesta con la lógica del chatbot
             response = chatbot_response(user_input)
-            return jsonify({"response": response}), 200
+            return jsonify(response), 200
         else:
-            # Si no hay mensaje, devuelve un error
-            return jsonify({"error": "No se proporcionó ninguna consulta."}), 400
+            return jsonify({"response": "No se proporcionó ninguna consulta.", "suggestions": []}), 400
     except Exception as e:
-        # Manejo de errores generales
-        return jsonify({"error": f"Ha ocurrido un error: {str(e)}"}), 500
+        return jsonify({"response": f"Ha ocurrido un error: {str(e)}", "suggestions": []}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
