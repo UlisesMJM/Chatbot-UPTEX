@@ -108,69 +108,76 @@
 
     <script>
         const chatMessages = document.getElementById('chat-messages');
-        const userInput = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
+const userInput = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
 
-        const addMessage = (sender, message, suggestions = []) => {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', sender === 'user' ? 'user' : 'bot');
-            messageElement.textContent = message;
+const addMessage = (sender, message, suggestions = []) => {
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message', sender === 'user' ? 'user' : 'bot');
+    messageElement.innerHTML = message; // Permitir HTML en los mensajes
 
-            chatMessages.appendChild(messageElement);
+    chatMessages.appendChild(messageElement);
 
-            if (suggestions.length > 0) {
-                const suggestionsContainer = document.createElement('div');
-                suggestionsContainer.classList.add('suggestions');
-                suggestions.forEach(suggestion => {
-                    const button = document.createElement('button');
-                    button.classList.add('suggestion-btn');
-                    button.textContent = suggestion;
-                    button.onclick = () => {
-                        userInput.value = suggestion;
-                        sendMessage();
-                    };
-                    suggestionsContainer.appendChild(button);
-                });
-                chatMessages.appendChild(suggestionsContainer);
-            }
+    if (suggestions.length > 0) {
+        const suggestionsContainer = document.createElement('div');
+        suggestionsContainer.classList.add('suggestions');
+        suggestions.forEach(suggestion => {
+            const button = document.createElement('button');
+            button.classList.add('suggestion-btn');
+            button.textContent = suggestion;
+            button.onclick = () => {
+                userInput.value = suggestion;
+                sendMessage();
+            };
+            suggestionsContainer.appendChild(button);
+        });
+        chatMessages.appendChild(suggestionsContainer);
+    }
 
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        };
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+};
 
-        const sendMessage = () => {
-            const userMessage = userInput.value.trim();
-            if (!userMessage) return;
+const sendMessage = () => {
+    const userMessage = userInput.value.trim();
+    if (!userMessage) return;
 
-            addMessage('user', userMessage);
-            userInput.value = '';
+    addMessage('user', userMessage);
+    userInput.value = '';
 
-            fetch('/get_response', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: userMessage })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.response) {
-                    addMessage('bot', data.response, data.suggestions || []);
-                } else {
-                    addMessage('bot', "No se pudo procesar tu solicitud.");
-                }
-            })
-            .catch(error => {
-                addMessage('bot', "Hubo un error al procesar tu consulta. Intenta más tarde.");
-            });
-        };
+    fetch('/get_response', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.response) {
+            addMessage('bot', data.response, data.suggestions || []);
+        } else {
+            addMessage('bot', "No se pudo procesar tu solicitud.");
+        }
+    })
+    .catch(error => {
+        addMessage('bot', "Hubo un error al procesar tu consulta. Intenta más tarde.");
+    });
+};
 
-        sendBtn.onclick = sendMessage;
-        userInput.onkeypress = (e) => {
-            if (e.key === 'Enter') sendMessage();
-        };
+sendBtn.onclick = sendMessage;
+userInput.onkeypress = (e) => {
+    if (e.key === 'Enter') sendMessage();
+};
 
-        // Mensaje de bienvenida
-        addMessage('bot', "¡Hola! Bienvenido al chatbot de la UPTex. Selecciona una categoría o escribe tu pregunta:", [
-            "Horarios", "Admisión", "Carreras", "Servicios", "Becas", "Instalaciones"
-        ]);
+// Mensaje de bienvenida
+addMessage('bot', `
+    ¡Hola! Bienvenido al chatbot de la UPTex.<br>
+    Estoy aquí para ayudarte con tus preguntas sobre nuestra oferta educativa y servicios.<br>
+    Para obtener más información, visita la página oficial de la universidad en: 
+    <a href="https://uptexcoco.edomex.gob.mx/" target="_blank">https://uptexcoco.edomex.gob.mx/</a>.<br>
+    Por favor, selecciona una categoría o escribe tu pregunta para comenzar:
+`, [
+    "Horarios", "Admisión", "Carreras", "Servicios", "Becas", "Instalaciones"
+]);
+
     </script>
 </body>
 </html>

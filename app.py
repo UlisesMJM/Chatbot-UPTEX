@@ -4,18 +4,11 @@ from chatbot_logic import chatbot_response, question_groups
 app = Flask(__name__)
 
 # Mensajes principales
-WELCOME_MESSAGE = (
-    "¡Hola! Bienvenido al chatbot oficial de la UPTex. Estoy aquí para ayudarte con tus preguntas sobre nuestra oferta educativa y servicios. "
-    "Para obtener más información, también puedes visitar la página oficial de la universidad en: https://uptexcoco.edomex.gob.mx/. "
-    "Por favor, selecciona una categoría o escribe tu pregunta para comenzar."
-)
-
 
 @app.route('/')
 def home():
     return render_template(
         'index.html',
-        welcome_message=WELCOME_MESSAGE,
         categories=list(question_groups.keys())
     )
 
